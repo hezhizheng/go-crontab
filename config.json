@@ -1,0 +1,14 @@
+{
+  "app": {
+    "crontab_cmd": [
+      {
+        "crontab": "* * * * *",
+        "cmd": "ls -al"
+      },
+      {
+        "crontab": "* * * * *",
+        "cmd": "php -v"
+      }
+    ]
+  }
+}
