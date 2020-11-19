@@ -1,0 +1,6 @@
+app:
+  crontab_cmd:
+    - crontab: "* * * * * *"
+      cmd: "ls -al"
+    - crontab: "* 2 * * * *"
+      cmd: "ls -al x"
