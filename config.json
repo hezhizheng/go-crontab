@@ -1,12 +1,13 @@
 {
   "app": {
+    "model": "s",
     "crontab_cmd": [
       {
-        "crontab": "* * * * *",
+        "crontab": "0/1 * * * * ?",
         "cmd": "ls -al"
       },
       {
-        "crontab": "* * * * *",
+        "crontab": "0/1 * * * * ?",
         "cmd": "php -v"
       }
     ]
