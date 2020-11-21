@@ -1,14 +1,20 @@
 {
+  "comments": {
+    "comment0": "app.model 默认 s 秒级 如需使用分钟级改为 m ",
+    "comment_0": "app.crontab_cmd 为自定义的 crontab 表达式 与 要执行的命令 数组、支持多个，配置可参考一下配置",
+    "comment1": "// 这些是注释，不用理会 Java(Quartz)  0 0/1 * * * ?(每分钟)  0/1 * * * * ?(每秒)",
+    "comment2": "// windows 下路径需要使用‘\\’替换‘/’"
+  },
   "app": {
     "model": "s",
     "crontab_cmd": [
       {
-        "crontab": "0/1 * * * * ?",
-        "cmd": "ls -al"
+        "crontab": "0 0/1 * * * ?",
+        "cmd": "go version"
       },
       {
-        "crontab": "0/1 * * * * ?",
-        "cmd": "php -v"
+        "crontab": "0 0/1 * * * ?",
+        "cmd": "php E:\\www\\project\\dexter\\laravel-test-demo\\artisan schedule:run"
       }
     ]
   }
