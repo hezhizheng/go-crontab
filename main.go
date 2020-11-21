@@ -8,8 +8,6 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	"os/exec"
-	"strings"
-	"sync"
 	"time"
 )
 
@@ -19,7 +17,6 @@ type CrontabCmdList struct {
 }
 
 var ccl []CrontabCmdList
-var mutex sync.Mutex
 
 func init() {
 	initLog()
@@ -56,16 +53,7 @@ func main() {
 		// 添加所有配置的 Crontab
 		id, err := c.AddFunc(Crontab, func() {
 
-			p := Cmd
-			pa := Explode(p, " ")
-			CommandName := pa[0]
-			mutex.Lock()
-			pa = append(pa[:0], pa[0+1:]...)
-			mutex.Unlock()
-			CommandArg := pa
-
-			// 执行命令
-			f, err := exec.Command(CommandName, CommandArg...).Output()
+			f, err := exec.Command("bash", "-c", Cmd).Output()
 
 			if err != nil {
 				log.Error(err.Error())
@@ -127,13 +115,5 @@ func initConfig() {
 			log.Error("read config error")
 		}
 		log.Fatal(err) // 读取配置文件失败致命错误
-	}
-}
-
-func Explode(delimiter, text string) []string {
-	if len(delimiter) > len(text) {
-		return strings.Split(delimiter, text)
-	} else {
-		return strings.Split(text, delimiter)
 	}
 }

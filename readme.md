@@ -4,6 +4,7 @@
 
 ### features
 - 支持分钟跟秒级
+- 内部调用 bash -c 命令
 - 理论上跨平台支持 Windows 、Linux、MacOs
 - 自用test（window下的确没啥好用的定时任务管理器。。。还不如自己搞一个）
 
@@ -38,7 +39,7 @@
       },
       {
         "crontab": "0 0/1 * * * ?",
-        "cmd": "php E:\\www\\project\\dexter\\laravel-test-demo\\artisan schedule:run"
+        "cmd": "cd /e/www/project/dexter/laravel-test-demo && php artisan schedule:run"
       }
     ]
   }
@@ -57,7 +58,7 @@ go build
 - 保证编译的文件与 config.json 在同级目录
 
 - 执行 ./go-crontab.exe (不要关闭终端)
-![free-pic](https://static01.imgkr.com/temp/67bff2160fac49928bd5a8c6f1c6090c.png)
+![free-pic](https://i.loli.net/2020/11/21/BSqXohbL4NnpmU1.png)
 
 - 执行过程会自动生成log文件(保存一周，会定期清理)
 
