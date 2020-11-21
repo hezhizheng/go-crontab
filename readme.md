@@ -48,7 +48,7 @@
 
 ```
 
-编译
+编译 (windows提供编译好的文件下载 [releases](https://github.com/hezhizheng/go-crontab/releases) )
 ```
 go build
 ```
