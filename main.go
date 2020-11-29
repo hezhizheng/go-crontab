@@ -8,6 +8,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	"os/exec"
+	"sync"
 	"time"
 )
 
@@ -16,7 +17,12 @@ type CrontabCmdList struct {
 	Crontab string
 }
 
-var ccl []CrontabCmdList
+
+var (
+	chanPool = make(chan int, 3)
+	wg       sync.WaitGroup
+	ccl []CrontabCmdList
+)
 
 func init() {
 	initLog()
@@ -46,35 +52,49 @@ func main() {
 
 	// 遍历任务
 	for _, v := range ccl {
-
+		wg.Add(1)
 		Crontab := v.Crontab
 		Cmd := v.Cmd
-
 		// 添加所有配置的 Crontab
-		id, err := c.AddFunc(Crontab, func() {
-
-			f, err := exec.Command("bash", "-c", Cmd).Output()
-
-			if err != nil {
-				log.Error(err.Error())
-			}
-			log.Println("执行命令：", Cmd, "输出：", string(f))
-
-		})
-
-		if err != nil {
-			fmt.Println("定时任务启动错误：", err, id, Crontab, Cmd)
-		} else {
-			fmt.Println("已启动监听的定时任务： ", id, "表达式：", Crontab, "命令：", Cmd)
-		}
-
+		go addCrontabTask(c, Crontab, Cmd)
 	}
 
+	// 等待所有任务添加完毕
+	wg.Wait()
+
+	close(chanPool)
+	defer c.Stop()
 	c.Start()
 
-	fmt.Println("Start ing ")
+	fmt.Println("程序已启动，请不要关闭终端")
 
 	select {}
+}
+
+func addCrontabTask(c *cron.Cron, Crontab , Cmd string) {
+
+	chanPool <- 1
+
+	id, err := c.AddFunc(Crontab, func() {
+
+		f, err := exec.Command("bash", "-c", Cmd).Output()
+
+		if err != nil {
+			log.Error(err.Error())
+		}
+		log.Println("执行命令：", Cmd, "输出：", string(f))
+
+	})
+
+	if err != nil {
+		fmt.Println("定时任务启动错误：", err, id, Crontab, Cmd)
+	} else {
+		fmt.Println("已启动监听的定时任务： ", id, "表达式：", Crontab, "命令：", Cmd)
+	}
+
+	//time.Sleep(time.Second)
+	<-chanPool
+	wg.Done()
 }
 
 func initLog() {
