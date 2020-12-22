@@ -4,7 +4,7 @@
 
 ### features
 - 支持分钟跟秒级
-- 内部调用 bash -c 命令
+- 内部调用 bash -c 命令(Windows用户请自行安装 [git-for-windows](https://npm.taobao.org/mirrors/git-for-windows/)  来支持bash命令运行环境)
 - 理论上跨平台支持 Windows 、Linux、MacOs
 - 自用test（windows下的确没啥好用的定时任务管理器。。。还不如自己搞一个）
 
