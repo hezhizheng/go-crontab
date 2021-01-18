@@ -70,36 +70,45 @@ func main() {
 
 	fmt.Println("程序已启动，请不要关闭终端")
 
-	select {}
+	//select {}
+	var exit string
+	fmt.Printf("输入任意键退出\n")
+	fmt.Scanln(&exit)
+	return
 }
 
 func addCrontabTask(c *cron.Cron, Crontab , Cmd string) {
-
 	chanPool <- 1
-
 	id, err := c.AddFunc(Crontab, func() {
 
-		//f, err := exec.Command("bash", "-c", Cmd).Output()
-		//f := ""
-		//err := error
-		//if runtime.GOOS == "windows" {
-		//	f, err = exec.Command("cmd","/c",  Cmd).Output()
-		//}else{
-			f, err = exec.Command("bash", "-c", Cmd).Output()
-		//}
+		execMode := viper.Get(`app.exec_mode`)
 
+		execCommandFirst := ""
 
-		if err != nil {
-			// executable file not found
-			if strings.Contains(err.Error(), "executable file not found") {
-				panic("请确认当前系统支持 bash 或 cmd 命令的执行环境，并且已添加至环境变量。错误："+ err.Error())
+		if execMode != "" {
+			execCommandFirst = execMode.(string)
+			arg := ""
+			if execCommandFirst == "cmd" {
+				arg = "/c"
 			}
 
-			log.Error(err.Error())
+			if execCommandFirst == "bash" {
+				arg = "-c"
+			}
+
+			if arg == "" {
+				panic("只支持定义 bash 或 cmd 命令执行！")
+			}
+
+			outputByte, outputErr := exec.Command(execCommandFirst,arg,Cmd).Output()
+			checkExec(outputErr, Cmd, outputByte)
+		}else{
+			if runtime.GOOS == "windows" {
+				execCmd(Cmd)
+			} else {
+				execBash(Cmd)
+			}
 		}
-
-		log.Println("执行命令：", Cmd, "输出：", string(f))
-
 	})
 
 	if err != nil {
@@ -111,6 +120,28 @@ func addCrontabTask(c *cron.Cron, Crontab , Cmd string) {
 	//time.Sleep(time.Second)
 	<-chanPool
 	wg.Done()
+}
+
+func execBash(Cmd string,)  {
+	outputByte, outputErr := exec.Command("bash", "-c", Cmd).Output()
+	checkExec(outputErr, Cmd, outputByte)
+}
+
+func execCmd(Cmd string,)  {
+	outputByte, outputErr := exec.Command("cmd","/c",  Cmd).Output()
+	checkExec(outputErr, Cmd, outputByte)
+}
+
+// 检测bash 、cmd 的运行环境
+func checkExec(outputErr error, Cmd string, outputByte []byte) {
+	if outputErr != nil {
+		// executable file not found
+		if strings.Contains(outputErr.Error(), "executable file not found") {
+			panic("请确认当前系统支持 bash 或 cmd 命令的执行环境，并且已添加至环境变量。错误：" + outputErr.Error())
+		}
+		log.Error(outputErr.Error())
+	}
+	log.Println("执行命令：", Cmd, "输出：", string(outputByte))
 }
 
 func initLog() {
