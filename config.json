@@ -8,12 +8,12 @@
     "model": "s",
     "crontab_cmd": [
       {
-        "crontab": "0 0/1 * * * ?",
+        "crontab": "0/3 * * * * ?",
         "cmd": "go version"
       },
       {
-        "crontab": "0 0/1 * * * ?",
-        "cmd": "cd /e/www/project/dexter/laravel-test-demo && php artisan schedule:run"
+        "crontab": "0/3 * * * * ?",
+        "cmd": "F: && cd F:\\bin_pic && php bing.php"
       }
     ]
   }

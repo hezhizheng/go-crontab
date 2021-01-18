@@ -8,6 +8,8 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	"os/exec"
+	"runtime"
+	"strings"
 	"sync"
 	"time"
 )
@@ -77,11 +79,25 @@ func addCrontabTask(c *cron.Cron, Crontab , Cmd string) {
 
 	id, err := c.AddFunc(Crontab, func() {
 
-		f, err := exec.Command("bash", "-c", Cmd).Output()
+		//f, err := exec.Command("bash", "-c", Cmd).Output()
+		//f := ""
+		//err := error
+		//if runtime.GOOS == "windows" {
+		//	f, err = exec.Command("cmd","/c",  Cmd).Output()
+		//}else{
+			f, err = exec.Command("bash", "-c", Cmd).Output()
+		//}
+
 
 		if err != nil {
+			// executable file not found
+			if strings.Contains(err.Error(), "executable file not found") {
+				panic("请确认当前系统支持 bash 或 cmd 命令的执行环境，并且已添加至环境变量。错误："+ err.Error())
+			}
+
 			log.Error(err.Error())
 		}
+
 		log.Println("执行命令：", Cmd, "输出：", string(f))
 
 	})
