@@ -100,7 +100,7 @@ func addCrontabTask(c *cron.Cron, Crontab , Cmd string) {
 				panic("只支持定义 bash 或 cmd 命令执行！")
 			}
 
-			outputByte, outputErr := exec.Command(execCommandFirst,arg,Cmd).Output()
+			outputByte, outputErr := exec.Command(execCommandFirst,arg,Cmd).CombinedOutput()
 			checkExec(outputErr, Cmd, outputByte)
 		}else{
 			if runtime.GOOS == "windows" {
@@ -123,12 +123,12 @@ func addCrontabTask(c *cron.Cron, Crontab , Cmd string) {
 }
 
 func execBash(Cmd string,)  {
-	outputByte, outputErr := exec.Command("bash", "-c", Cmd).Output()
+	outputByte, outputErr := exec.Command("bash", "-c", Cmd).CombinedOutput()
 	checkExec(outputErr, Cmd, outputByte)
 }
 
 func execCmd(Cmd string,)  {
-	outputByte, outputErr := exec.Command("cmd","/c",  Cmd).Output()
+	outputByte, outputErr := exec.Command("cmd","/c",  Cmd).CombinedOutput()
 	checkExec(outputErr, Cmd, outputByte)
 }
 
