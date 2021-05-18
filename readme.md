@@ -1,10 +1,9 @@
 ## Go-Crontab
 
-> 基于 golang 的 crontab 定时任务管理器
+> 基于 golang 的 crontab 定时任务管理器，解决在win环境开发下没有好用的定时任务管理器的囧境。
 
 ### features
 - 支持分钟跟秒级
-- ~~内部调用 bash -c 命令(Windows用户请自行安装 [git-for-windows](https://npm.taobao.org/mirrors/git-for-windows/)  来支持bash命令运行环境)~~
 - 自动识别当前系统 unix系统内部调用 `bash -c` 命令，windows 系统内部调用  `cmd /c`
 - 支持指定 bash 或 cmd 命令
 - 理论上跨平台支持 Windows 、Linux、MacOs
@@ -59,7 +58,7 @@
 
 编译 (windows提供编译好的文件下载 [releases](https://github.com/hezhizheng/go-crontab/releases) )
 ```
-go build
+go build -ldflags "-s -w" -gcflags="all=-trimpath=${PWD}" -asmflags="all=-trimpath=${PWD}"
 ```
 
 
@@ -67,6 +66,6 @@ go build
 - 保证编译的文件与 config.json 在同级目录
 
 - 执行 ./go-crontab.exe (不要关闭终端)
-![free-pic](https://i.loli.net/2020/11/21/BSqXohbL4NnpmU1.png)
+![free-pic](https://cdn.jsdelivr.net/gh/hezhizheng/static-image-hosting@master/image-hosting/20210518172138_ARNYYAIVNXHJPYKX.png)
 
 - 执行过程会自动生成log文件(保存一周，会定期清理)

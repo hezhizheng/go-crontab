@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/alexeyco/simpletable"
 	rotatelogs "github.com/lestrrat-go/file-rotatelogs"
 	"github.com/robfig/cron/v3"
 	log "github.com/sirupsen/logrus"
@@ -19,11 +20,19 @@ type CrontabCmdList struct {
 	Crontab string
 }
 
+type CrontabTaskList struct {
+	Id      cron.EntryID
+	Cmd     string
+	Crontab string
+	ErrMsg  interface{}
+}
 
 var (
 	chanPool = make(chan int, 3)
 	wg       sync.WaitGroup
+	mutex    sync.Mutex
 	ccl []CrontabCmdList
+	tasks []CrontabTaskList
 )
 
 func init() {
@@ -70,6 +79,37 @@ func main() {
 
 	fmt.Println("程序已启动，请不要关闭终端")
 
+	// 表格展示
+	table := simpletable.New()
+
+	table.Header = &simpletable.Header{
+		Cells: []*simpletable.Cell{
+			{Align: simpletable.AlignCenter, Text: "任务ID"},
+			{Align: simpletable.AlignCenter, Text: "表达式"},
+			{Align: simpletable.AlignCenter, Text: "执行命令"},
+			{Align: simpletable.AlignCenter, Text: "错误信息"},
+		},
+	}
+
+	for _, row := range tasks {
+		errMsg := fmt.Sprintf("%s", row.ErrMsg)
+		if errMsg == "%!s(<nil>)" {
+			errMsg = "nil"
+		}
+		r := []*simpletable.Cell{
+			{Align: simpletable.AlignRight, Text: fmt.Sprintf("%d", row.Id)},
+			{Align:simpletable.AlignCenter,Text: row.Crontab},
+			{Align:simpletable.AlignCenter,Text: row.Cmd},
+			{Align:simpletable.AlignCenter,Text: errMsg},
+		}
+		mutex.Lock()
+		table.Body.Cells = append(table.Body.Cells, r)
+		mutex.Unlock()
+	}
+
+	table.SetStyle(simpletable.StyleRounded)
+	fmt.Println(table.String())
+
 	//select {}
 	var exit string
 	fmt.Printf("输入任意键退出\n")
@@ -111,11 +151,15 @@ func addCrontabTask(c *cron.Cron, Crontab , Cmd string) {
 		}
 	})
 
-	if err != nil {
-		fmt.Println("定时任务启动错误：", err, id, Crontab, Cmd)
-	} else {
-		fmt.Println("已启动监听的定时任务： ", id, "表达式：", Crontab, "命令：", Cmd)
-	}
+
+	mutex.Lock()
+	tasks = append(tasks,CrontabTaskList{
+		Id: id,
+		Crontab: Crontab,
+		Cmd: Cmd,
+		ErrMsg: err,
+	})
+	mutex.Unlock()
 
 	//time.Sleep(time.Second)
 	<-chanPool
@@ -176,11 +220,11 @@ func initConfig() {
 	if err := viper.ReadInConfig(); err != nil {
 		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
 			// Config file not found; ignore error if desired
-			log.Error("no such config file")
+			panic("no such config file 当前目录没有config.json文件")
 		} else {
 			// Config file was found but another error was produced
-			log.Error("read config error")
+			panic("read config error 读取配置文件错误")
 		}
-		log.Fatal(err) // 读取配置文件失败致命错误
+		panic(err) // 读取配置文件失败致命错误
 	}
 }
