@@ -225,6 +225,5 @@ func initConfig() {
 			// Config file was found but another error was produced
 			panic("read config error 读取配置文件错误")
 		}
-		panic(err) // 读取配置文件失败致命错误
 	}
 }
