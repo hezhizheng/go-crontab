@@ -10,6 +10,7 @@ import (
 	"github.com/spf13/viper"
 	"os/exec"
 	"runtime"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -34,6 +35,8 @@ var (
 	ccl []CrontabCmdList
 	tasks []CrontabTaskList
 )
+
+const GoCrontabVersion = "v0.0.7"
 
 func init() {
 	initLog()
@@ -77,7 +80,7 @@ func main() {
 	defer c.Stop()
 	c.Start()
 
-	fmt.Println("程序已启动，请不要关闭终端")
+	fmt.Println("go-crontab 程序已启动，请不要关闭终端","version："+GoCrontabVersion )
 
 	// 表格展示
 	table := simpletable.New()
@@ -140,8 +143,10 @@ func addCrontabTask(c *cron.Cron, Crontab , Cmd string) {
 				panic("只支持定义 bash 或 cmd 命令执行！")
 			}
 
+			// 执行时间标记
+			startTime := time.Now()
 			outputByte, outputErr := exec.Command(execCommandFirst,arg,Cmd).CombinedOutput()
-			checkExec(outputErr, Cmd, outputByte)
+			checkExec(outputErr, Cmd, outputByte,startTime)
 		}else{
 			if runtime.GOOS == "windows" {
 				execCmd(Cmd)
@@ -167,17 +172,20 @@ func addCrontabTask(c *cron.Cron, Crontab , Cmd string) {
 }
 
 func execBash(Cmd string,)  {
+	// 执行时间标记
+	startTime := time.Now()
 	outputByte, outputErr := exec.Command("bash", "-c", Cmd).CombinedOutput()
-	checkExec(outputErr, Cmd, outputByte)
+	checkExec(outputErr, Cmd, outputByte,startTime)
 }
 
 func execCmd(Cmd string,)  {
+	startTime := time.Now()
 	outputByte, outputErr := exec.Command("cmd","/c",  Cmd).CombinedOutput()
-	checkExec(outputErr, Cmd, outputByte)
+	checkExec(outputErr, Cmd, outputByte,startTime)
 }
 
 // 检测bash 、cmd 的运行环境
-func checkExec(outputErr error, Cmd string, outputByte []byte) {
+func checkExec(outputErr error, Cmd string, outputByte []byte ,startTime time.Time) {
 	if outputErr != nil {
 		// executable file not found
 		if strings.Contains(outputErr.Error(), "executable file not found") {
@@ -185,7 +193,11 @@ func checkExec(outputErr error, Cmd string, outputByte []byte) {
 		}
 		log.Error(outputErr.Error())
 	}
-	log.Println("执行命令：", Cmd, "输出：", string(outputByte))
+	// 结束时间标记
+	endTime := time.Since(startTime)
+	ExecSecondsS := strconv.FormatFloat(endTime.Seconds(), 'f', 2, 64)
+
+	log.Println("执行命令：", Cmd, "输出：", string(outputByte),"执行耗时：",ExecSecondsS+" s")
 }
 
 func initLog() {

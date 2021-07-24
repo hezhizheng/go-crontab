@@ -6,6 +6,7 @@
 - 支持分钟跟秒级
 - 自动识别当前系统 unix系统内部调用 `bash -c` 命令，windows 系统内部调用  `cmd /c`
 - 支持指定 bash 或 cmd 命令
+- 自动生成log日志文件记录  
 - 理论上跨平台支持 Windows 、Linux、MacOs
 - 自用test（windows下的确没啥好用的定时任务管理器。。。还不如自己搞一个）
 
@@ -66,6 +67,10 @@ go build -ldflags "-s -w" -gcflags="all=-trimpath=${PWD}" -asmflags="all=-trimpa
 - 保证编译的文件与 config.json 在同级目录
 
 - 执行 ./go-crontab.exe (不要关闭终端)
-![free-pic](https://cdn.jsdelivr.net/gh/hezhizheng/static-image-hosting@master/image-hosting/20210518172138_ARNYYAIVNXHJPYKX.png)
+![free-pic](https://cdn.jsdelivr.net/gh/hezhizheng/static-image-hosting@main/image-hosting/20210518172138_ARNYYAIVNXHJPYKX.png)
 
 - 执行过程会自动生成log文件(保存一周，会定期清理)
+```log
+{"level":"info","msg":"执行命令： go version 输出： go version go1.15.2 windows/386\n 执行耗时： 0.10 s","time":"2021-07-24 10:39:00"}
+{"level":"info","msg":"执行命令： php -f q.php 输出： sleep done 执行耗时： 5.15 s","time":"2021-07-24 10:39:05"}
+```
