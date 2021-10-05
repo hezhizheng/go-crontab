@@ -57,13 +57,19 @@
 
 ```
 
-编译 (windows提供编译好的文件下载 [releases](https://github.com/hezhizheng/go-crontab/releases) )
+## [执行路径名中存在空格的解决方案](https://github.com/hezhizheng/go-crontab/issues/2#issuecomment-932979020)
+
+
+
+
+## 编译 
+(windows提供编译好的文件下载 [releases](https://github.com/hezhizheng/go-crontab/releases) )
 ```
 go build -ldflags "-s -w" -gcflags="all=-trimpath=${PWD}" -asmflags="all=-trimpath=${PWD}"
 ```
 
 
-运行
+## 运行
 - 保证编译的文件与 config.json 在同级目录
 
 - 执行 ./go-crontab.exe (不要关闭终端)
