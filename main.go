@@ -3,17 +3,20 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/alexeyco/simpletable"
 	rotatelogs "github.com/lestrrat-go/file-rotatelogs"
+	"github.com/olekukonko/tablewriter"
 	"github.com/robfig/cron/v3"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
+	"math"
+	"os"
 	"os/exec"
 	"runtime"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
+	"unicode/utf8"
 )
 
 type CrontabCmdList struct {
@@ -83,41 +86,62 @@ func main() {
 	fmt.Println("go-crontab 程序已启动，请不要关闭终端","version："+GoCrontabVersion )
 
 	// 表格展示
-	table := simpletable.New()
+	table := tablewriter.NewWriter(os.Stdout)
+	table.SetHeader([]string{"任务ID", "表达式", "执行命令","错误信息"})
 
-	table.Header = &simpletable.Header{
-		Cells: []*simpletable.Cell{
-			{Align: simpletable.AlignCenter, Text: "任务ID"},
-			{Align: simpletable.AlignCenter, Text: "表达式"},
-			{Align: simpletable.AlignCenter, Text: "执行命令"},
-			{Align: simpletable.AlignCenter, Text: "错误信息"},
-		},
-	}
-
-	for _, row := range tasks {
-		errMsg := fmt.Sprintf("%s", row.ErrMsg)
+	for _, v := range tasks {
+		errMsg := fmt.Sprintf("%s", v.ErrMsg)
 		if errMsg == "%!s(<nil>)" {
 			errMsg = "nil"
 		}
-		r := []*simpletable.Cell{
-			{Align: simpletable.AlignRight, Text: fmt.Sprintf("%d", row.Id)},
-			{Align:simpletable.AlignCenter,Text: row.Crontab},
-			{Align:simpletable.AlignCenter,Text: row.Cmd},
-			{Align:simpletable.AlignCenter,Text: errMsg},
-		}
-		mutex.Lock()
-		table.Body.Cells = append(table.Body.Cells, r)
-		mutex.Unlock()
-	}
 
-	table.SetStyle(simpletable.StyleRounded)
-	fmt.Println(table.String())
+		// 切割一下 字符 表达式 ，避免字符过长终端表格显示变形
+		table.Append([]string{
+			fmt.Sprintf("%d", v.Id),
+			interceptStrFunc(v.Cmd, 40),
+			v.Crontab,
+			interceptStrFunc(errMsg, 40),
+		})
+	}
+	table.Render() // Send output
 
 	//select {}
 	var exit string
 	fmt.Printf("输入任意键退出\n")
 	fmt.Scanln(&exit)
 	return
+}
+
+func interceptStrFunc(str string, num int) string {
+	if num == 0 {
+		return str
+	}
+	strLen := utf8.RuneCountInString(str)
+	if strLen <= num {
+		return str
+	}
+	// 换行符
+	symbol := "\n"
+	// 向上取整
+	float64Num := float64(num)
+	CeilNum := math.Ceil(float64(strLen) / float64Num)
+	intC := int(CeilNum)
+
+	// 初始值
+	s := 0
+	_num := num
+
+	var builder strings.Builder
+	for j := 1; j <= intC; j++ {
+		if j == intC {
+			num = strLen
+		}
+		builder.WriteString(string([]rune(str)[s:num]))
+		builder.WriteString(symbol)
+		s = s + _num
+		num = num + _num
+	}
+	return builder.String()
 }
 
 func addCrontabTask(c *cron.Cron, Crontab , Cmd string) {
