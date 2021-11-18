@@ -113,7 +113,7 @@ func main() {
 }
 
 func interceptStrFunc(str string, num int) string {
-	if num == 0 {
+	if num <= 0 {
 		return str
 	}
 	strLen := utf8.RuneCountInString(str)
