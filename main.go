@@ -96,12 +96,14 @@ func main() {
 		}
 
 		// 切割一下 字符 表达式 ，避免字符过长终端表格显示变形
+		mutex.Lock()
 		table.Append([]string{
 			fmt.Sprintf("%d", v.Id),
 			interceptStrFunc(v.Cmd, 40),
 			v.Crontab,
 			interceptStrFunc(errMsg, 40),
 		})
+		mutex.Unlock()
 	}
 	table.Render() // Send output
 
