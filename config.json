@@ -10,12 +10,14 @@
     "exec_mode":"",
     "crontab_cmd": [
       {
-        "crontab": "0 0/1 * * * ?",
-        "cmd": "go version"
+        "crontab": "0/1 * * * * ?",
+        "cmd": "go version",
+        "model": "s"
       },
       {
-        "crontab": "0 0/1 * * * ?",
-        "cmd": "e: && cd E:\\www\\project\\dexter\\laravel-test-demo && php artisan schedule:run"
+        "crontab": "* * * * *",
+        "cmd": "php -v",
+        "model": "m"
       }
     ]
   }

@@ -8,27 +8,24 @@ import (
 	"github.com/robfig/cron/v3"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
-	"golang.org/x/text/encoding/simplifiedchinese"
-	"math"
 	"os"
 	"os/exec"
 	"runtime"
-	"strconv"
-	"strings"
 	"sync"
 	"time"
-	"unicode/utf8"
 )
 
 type CrontabCmdList struct {
 	Cmd     string
 	Crontab string
+	Model   string
 }
 
 type CrontabTaskList struct {
 	Id      cron.EntryID
 	Cmd     string
 	Crontab string
+	Model   string
 	ErrMsg  interface{}
 }
 
@@ -40,7 +37,12 @@ var (
 	tasks    []CrontabTaskList
 )
 
-const GoCrontabVersion = "v0.0.8"
+var modelMap = map[string]*cron.Cron{
+	"s": cron.New(cron.WithSeconds()),
+	"m": cron.New(),
+}
+
+const GoCrontabVersion = "v0.0.9"
 
 func init() {
 	initLog()
@@ -51,11 +53,9 @@ func main() {
 
 	crontabModel := viper.Get(`app.model`)
 
-	c := cron.New()
-
-	if crontabModel == "s" {
-		c = cron.New(cron.WithSeconds()) // 秒级
-	}
+	// 默认驱动模式
+	defaultC := modelMap[crontabModel.(string)]
+	c := modelMap[crontabModel.(string)]
 
 	// 从配置文件中读取
 	crontabCmdMap := viper.Get(`app.crontab_cmd`)
@@ -73,8 +73,13 @@ func main() {
 		wg.Add(1)
 		Crontab := v.Crontab
 		Cmd := v.Cmd
+		if v.Model != "" {
+			c = modelMap[v.Model]
+		} else {
+			v.Model = crontabModel.(string)
+		}
 		// 添加所有配置的 Crontab
-		go addCrontabTask(c, Crontab, Cmd)
+		go addCrontabTask(c, Crontab, Cmd, v.Model)
 	}
 
 	// 等待所有任务添加完毕
@@ -83,8 +88,12 @@ func main() {
 	close(chanPool)
 	defer c.Stop()
 	c.Start()
+	if defaultC != c {
+		defer defaultC.Stop()
+		defaultC.Start()
+	}
 
-	fmt.Println("go-crontab 程序已启动，请不要关闭终端", "version："+GoCrontabVersion)
+	fmt.Println("go-crontab 程序已启动，请不要关闭终端", "version："+GoCrontabVersion, "power by https://hzz.cool")
 
 	// 表格展示
 	table := tablewriter.NewWriter(os.Stdout)
@@ -95,11 +104,10 @@ func main() {
 		if errMsg == "%!s(<nil>)" {
 			errMsg = "nil"
 		}
-
 		// 切割一下 字符 表达式 ，避免字符过长终端表格显示变形
 		mutex.Lock()
 		table.Append([]string{
-			fmt.Sprintf("%d", v.Id),
+			v.Model + "-" + fmt.Sprintf("%d", v.Id),
 			interceptStrFunc(v.Cmd, 40),
 			v.Crontab,
 			interceptStrFunc(errMsg, 40),
@@ -115,40 +123,7 @@ func main() {
 	return
 }
 
-// 按需切割、拼接字符串
-func interceptStrFunc(str string, num int) string {
-	if num <= 0 {
-		return str
-	}
-	strLen := utf8.RuneCountInString(str)
-	if strLen <= num {
-		return str
-	}
-	// 换行符
-	symbol := "\n"
-	// 向上取整
-	float64Num := float64(num)
-	CeilNum := math.Ceil(float64(strLen) / float64Num)
-	intC := int(CeilNum)
-
-	// 初始值
-	s := 0
-	_num := num
-
-	var builder strings.Builder
-	for j := 1; j <= intC; j++ {
-		if j == intC {
-			num = strLen
-		}
-		builder.WriteString(string([]rune(str)[s:num]))
-		builder.WriteString(symbol)
-		s = s + _num
-		num = num + _num
-	}
-	return builder.String()
-}
-
-func addCrontabTask(c *cron.Cron, Crontab, Cmd string) {
+func addCrontabTask(c *cron.Cron, Crontab, Cmd string, Model string) {
 	chanPool <- 1
 	id, err := c.AddFunc(Crontab, func() {
 
@@ -190,63 +165,13 @@ func addCrontabTask(c *cron.Cron, Crontab, Cmd string) {
 		Crontab: Crontab,
 		Cmd:     Cmd,
 		ErrMsg:  err,
+		Model:   Model,
 	})
 	mutex.Unlock()
 
 	//time.Sleep(time.Second)
 	<-chanPool
 	wg.Done()
-}
-
-func execBash(Cmd string) {
-	// 执行时间标记
-	startTime := time.Now()
-	outputByte, outputErr := exec.Command("bash", "-c", Cmd).CombinedOutput()
-	checkExec(outputErr, Cmd, outputByte, startTime)
-}
-
-func execCmd(Cmd string) {
-	startTime := time.Now()
-	outputByte, outputErr := exec.Command("cmd", "/c", Cmd).CombinedOutput()
-	checkExec(outputErr, Cmd, outputByte, startTime)
-}
-
-// 检测bash 、cmd 的运行环境
-func checkExec(outputErr error, Cmd string, outputByte []byte, startTime time.Time) {
-	if outputErr != nil {
-		// executable file not found
-		if strings.Contains(outputErr.Error(), "executable file not found") {
-			panic("请确认当前系统支持 bash 或 cmd 命令的执行环境，并且已添加至环境变量。错误：" + outputErr.Error())
-		}
-		log.Error(outputErr.Error())
-	}
-	// 结束时间标记
-	endTime := time.Since(startTime)
-	ExecSecondsS := strconv.FormatFloat(endTime.Seconds(), 'f', 2, 64)
-
-	log.Println("执行命令：", Cmd, "输出：", convertByte2String(outputByte, "GB18030"), "执行耗时：", ExecSecondsS+" s")
-}
-
-type Charset string
-
-const (
-	UTF8    = Charset("UTF-8")
-	GB18030 = Charset("GB18030")
-)
-
-// 处理终端中文显示乱码
-func convertByte2String(byte []byte, charset Charset) string {
-	var str string
-	switch charset {
-	case GB18030:
-		var decodeBytes, _ = simplifiedchinese.GB18030.NewDecoder().Bytes(byte)
-		str = string(decodeBytes)
-	case UTF8:
-		fallthrough
-	default:
-		str = string(byte)
-	}
-	return str
 }
 
 func initLog() {
