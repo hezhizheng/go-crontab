@@ -3,6 +3,7 @@
     "comment0": "app.model 默认 s 秒级 如需使用分钟级改为 m ",
     "comment00": "app.exec_mode 默认空字符串,程序会根据当前操作系统自动区分执行bash还是cmd命令，支持指定命令执行，可选参数 bash/cmd ",
     "comment_0": "app.crontab_cmd 为自定义的 crontab 表达式 与 要执行的命令 数组、支持多个，配置可参考一下配置",
+    "comment_1": "app.crontab_cmd.0.model 为定时任务类型同 app.model",
     "comment1": "// 这些是注释，不用理会 Java(Quartz)  0 0/1 * * * ?(每分钟)  0/1 * * * * ?(每秒)"
   },
   "app": {
