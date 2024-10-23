@@ -29,7 +29,7 @@
   }
 }
 
-# windows 实现 laravel 的任务调度 schedule:run (只支持分钟级别，不能定义秒级的！！！)
+# 支持实现 laravel 的任务调度 schedule:run (只支持分钟级别)，若想实现秒级驱动，指定 artisan 脚本名称即可
 # app.model可以定义为s 但是对应的crontab表达式必须为每分钟运行！可参考 Java(Quartz) 表达式书写
 # 或直接定义app.model 为 m ,则crontab表达式为 "* * * * *"
 # 命令表达式需要与对应环境匹配
