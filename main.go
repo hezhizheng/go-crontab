@@ -42,7 +42,7 @@ var modelMap = map[string]*cron.Cron{
 	"m": cron.New(),
 }
 
-const GoCrontabVersion = "v0.0.9"
+const GoCrontabVersion = "v0.1.0"
 
 func init() {
 	initLog()
@@ -108,8 +108,8 @@ func main() {
 		mutex.Lock()
 		table.Append([]string{
 			v.Model + "-" + fmt.Sprintf("%d", v.Id),
-			interceptStrFunc(v.Cmd, 40),
 			v.Crontab,
+			interceptStrFunc(v.Cmd, 40),
 			interceptStrFunc(errMsg, 40),
 		})
 		mutex.Unlock()
@@ -118,7 +118,7 @@ func main() {
 
 	//select {}
 	var exit string
-	fmt.Printf("输入任意键退出\n")
+	fmt.Printf("按回车键退出\n")
 	fmt.Scanln(&exit)
 	return
 }
